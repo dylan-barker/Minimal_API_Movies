@@ -1,11 +1,13 @@
-using Microsoft.AspNetCore.OutputCaching;
-using Minimal_API_Movies.Entities;
+using Minimal_API_Movies.Endpoints;
 using Minimal_API_Movies.Repositories;
+using Minimal_API_Movies.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // services
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
+
+builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
 
 builder.Services.AddCors(options =>
 {
@@ -34,31 +36,6 @@ app.UseCors();
 
 app.UseOutputCache();
 
-app.MapGet("/", () => "Hello World!");
-
-app.MapGet("/genres", async (IGenresRepository genresRepository) =>
-{
-    var genres = await genresRepository.GetAll();
-    return genres;
-}).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")); // Cache the response for 30 seconds
-
-app.MapGet("/genres/{id:int}", async (int id, IGenresRepository genresRepository) =>
-{
-    var genre = await genresRepository.GetById(id);
-
-    if (genre is null)
-    {
-        return Results.NotFound();
-    }
-    return Results.Ok(genre);
-});
-
-app.MapPost("/genres", async (Genre genre, IGenresRepository genresRepository,
-    IOutputCacheStore outputCacheStore) =>
-{
-    await genresRepository.Create(genre);
-    await outputCacheStore.EvictByTagAsync("genres-get", default);
-    return TypedResults.Created($"/genres/{genre.Id}", genre);
-});
+app.MapGroup("/genres").MapGenres();
 
 app.Run();

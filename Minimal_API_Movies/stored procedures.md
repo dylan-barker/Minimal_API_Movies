@@ -1,0 +1,56 @@
+﻿CREATE PROCEDURE Genres_GetAll 
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT Id, Name FROM Genres ORDER BY Name
+END
+GO
+
+CREATE PROCEDURE Genres_GetById
+	@Id int
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT Id, Name FROM Genres WHERE Id = @Id
+END
+GO
+
+CREATE PROCEDURE Genres_Create
+	@Name nvarchar(50)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO Genres (Name) VALUES (@Name); 
+	SELECT SCOPE_IDENTITY();
+END
+GO
+
+CREATE PROCEDURE Genres_Delete
+	@Id int
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DELETE FROM Genres WHERE Id = @Id
+END
+GO
+
+CREATE PROCEDURE Genres_Exist
+	@Id int
+AS
+BEGIN
+	SET NOCOUNT ON;
+	IF EXISTS (SELECT 1 FROM Genres WHERE Id = @Id) SELECT 1; ELSE SELECT 0;
+END
+GO
+
+CREATE PROCEDURE Genres_Update
+	@Id int, @Name nvarchar(50)
+AS
+BEGIN
+	SET NOCOUNT ON;
+	UPDATE Genres SET Name = @Name WHERE Id = @Id
+END
+GO

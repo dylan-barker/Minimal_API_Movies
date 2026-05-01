@@ -1,9 +1,8 @@
-﻿namespace Minimal_API_Movies.Entities
+﻿namespace Minimal_API_Movies.DTOs
 {
-    public class Genre
+    public class GenreDTO
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-
     }
 }

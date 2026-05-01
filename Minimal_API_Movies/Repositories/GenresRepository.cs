@@ -1,8 +1,7 @@
 ﻿using Dapper;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Data.SqlClient;
 using Minimal_API_Movies.Entities;
-using System.Data.Common;
+using System.Data;
 
 namespace Minimal_API_Movies.Repositories
 {
@@ -18,10 +17,29 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var query = "INSERT INTO Genres (Name) VALUES (@Name); SELECT SCOPE_IDENTITY();";
-                var id = await connection.QuerySingleAsync<int>(query, genre);
+                var procedure = "Genres_Create";
+                var id = await connection.QuerySingleAsync<int>(procedure, new { genre.Name }, commandType: CommandType.StoredProcedure);
                 genre.Id = id;
                 return id;
+            }
+        }
+
+        public async Task Delete(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Genres_Delete";
+                await connection.ExecuteAsync(procedure, new { id }, commandType: CommandType.StoredProcedure);
+            }
+        }
+
+        public async Task<bool> Exists(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Genres_Exist";
+                var exists = await connection.QuerySingleAsync<bool>(procedure, new { id }, commandType: CommandType.StoredProcedure);
+                return exists;
             }
         }
 
@@ -29,19 +47,28 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var query = "SELECT Id, Name FROM Genres ORDER BY Name";
-                var genres = await connection.QueryAsync<Genre>(query);
+                var procedure = "Genres_GetAll";
+                var genres = await connection.QueryAsync<Genre>(procedure, commandType: CommandType.StoredProcedure);
                 return genres.ToList();
             }
         }
 
         public async Task<Genre?> GetById(int id)
         {
-            using(var connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
-                var query = "SELECT Id, Name FROM Genres WHERE Id = @Id";
-                var genre = await connection.QuerySingleOrDefaultAsync<Genre>(query, new { Id = id });
+                var procedure = "Genres_GetById";
+                var genre = await connection.QuerySingleOrDefaultAsync<Genre>(procedure, new { Id = id }, commandType: CommandType.StoredProcedure);
                 return genre;
+            }
+        }
+
+        public async Task Update(Genre genre)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Genres_Update";
+                await connection.ExecuteAsync(procedure, new { genre.Id, genre.Name }, commandType: CommandType.StoredProcedure);
             }
         }
     }
