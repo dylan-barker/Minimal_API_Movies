@@ -21,7 +21,6 @@ namespace Minimal_API_Movies.Repositories
                 var procedure = "Actors_Create";
                 var id = await connection.QuerySingleAsync<int>(procedure,
                     new { actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
-
                 actor.Id = id;
                 return id;
             }

@@ -32,14 +32,11 @@ namespace Minimal_API_Movies.Endpoints
         static async Task<Results<Ok<GenreDTO>, NotFound>> GetGenreById(int id, IGenresRepository genresRepository, IMapper mapper)
         {
             var genre = await genresRepository.GetById(id);
-
             if (genre is null)
             {
                 return TypedResults.NotFound();
             }
-
             var genreDTO = mapper.Map<GenreDTO>(genre);
-
             return TypedResults.Ok(genreDTO);
         }
 
@@ -47,12 +44,9 @@ namespace Minimal_API_Movies.Endpoints
             IOutputCacheStore outputCacheStore, IMapper mapper)
         {
             var genre = mapper.Map<Genre>(createGenreDTO);
-
             await genresRepository.Create(genre);
             await outputCacheStore.EvictByTagAsync("genres-get", default);
-
             var genreDTO = mapper.Map<GenreDTO>(genre);
-
             return TypedResults.Created($"/genres/{genre.Id}", genreDTO);
         }
 
@@ -60,15 +54,12 @@ namespace Minimal_API_Movies.Endpoints
             IOutputCacheStore outputCacheStore, IMapper mapper)
         {
             var exists = await genresRepository.Exists(id);
-
             if (!exists)
             {
                 return TypedResults.NotFound();
             }
-
             var genre = mapper.Map<Genre>(createGenreDTO);
             genre.Id = id;
-
             await genresRepository.Update(genre);
             await outputCacheStore.EvictByTagAsync("genres-get", default);
             return TypedResults.NoContent();
@@ -78,12 +69,10 @@ namespace Minimal_API_Movies.Endpoints
             IOutputCacheStore outputCacheStore)
         {
             var exists = await genresRepository.Exists(id);
-
             if (!exists)
             {
                 return TypedResults.NotFound();
             }
-
             await genresRepository.Delete(id);
             await outputCacheStore.EvictByTagAsync("genres-get", default);
             return TypedResults.NoContent();
