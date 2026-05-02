@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // services
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
+builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
 
 builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
 
