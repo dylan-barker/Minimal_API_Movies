@@ -38,5 +38,6 @@ app.UseCors();
 app.UseOutputCache();
 
 app.MapGroup("/genres").MapGenres();
+app.MapGroup("/actors").MapActors();
 
 app.Run();

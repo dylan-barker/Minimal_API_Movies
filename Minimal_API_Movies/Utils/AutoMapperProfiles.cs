@@ -8,7 +8,12 @@ namespace Minimal_API_Movies.Utils
     {
         public AutoMapperProfiles()
         {
-            CreateMap<Genre, GenreDTO>().ReverseMap();
+            CreateMap<Genre, GenreDTO>();
+            CreateMap<CreateGenreDTO, Genre>();
+
+            CreateMap<Actor, ActorDTO>();
+            CreateMap<CreateActorDTO, Actor>()
+                .ForMember(p => p.Picture, options => options.Ignore());
         }
     }
 }
