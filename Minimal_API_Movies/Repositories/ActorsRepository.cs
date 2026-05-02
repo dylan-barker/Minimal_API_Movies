@@ -18,7 +18,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var id = await connection.QuerySingleAsync<int>("Actors_Create",
+                var procedure = "Actors_Create";
+                var id = await connection.QuerySingleAsync<int>(procedure,
                     new { actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
 
                 actor.Id = id;
@@ -30,7 +31,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                await connection.ExecuteAsync("Actors_Delete",
+                var procedure = "Actors_Delete";
+                await connection.ExecuteAsync(procedure,
                     new { id }, commandType: CommandType.StoredProcedure);
             }
         }
@@ -39,7 +41,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var exists = await connection.QuerySingleAsync<bool>("Actors_Exist",
+                var procedure = "Actors_Exist";
+                var exists = await connection.QuerySingleAsync<bool>(procedure,
                     new { id }, commandType: CommandType.StoredProcedure);
                 return exists;
             }
@@ -49,7 +52,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var actors = await connection.QueryAsync<Actor>("Actors_GetAll", commandType: CommandType.StoredProcedure);
+                var procedure = "Actors_GetAll";
+                var actors = await connection.QueryAsync<Actor>(procedure, commandType: CommandType.StoredProcedure);
                 return actors.ToList();
             }
         }
@@ -58,7 +62,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var actor = await connection.QuerySingleOrDefaultAsync<Actor>("Actors_GetById",
+                var procedure = "Actors_GetById";
+                var actor = await connection.QuerySingleOrDefaultAsync<Actor>(procedure,
                     new { id }, commandType: CommandType.StoredProcedure);
                 return actor;
             }
@@ -68,7 +73,8 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                await connection.ExecuteAsync("Actors_Update",
+                var procedure = "Actors_Update";
+                await connection.ExecuteAsync(procedure,
                     new { actor.Id, actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
             }
         }
