@@ -10,6 +10,8 @@ builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
 
 builder.Services.AddTransient<IFileStorage, AzureFileStorage>();
+builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
 
@@ -35,6 +37,8 @@ if (builder.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles();
 
 app.UseCors();
 
