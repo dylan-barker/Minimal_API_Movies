@@ -128,3 +128,14 @@ BEGIN
     DELETE FROM Actors WHERE Id = @Id;
 END
 GO
+
+CREATE PROCEDURE Actors_GetByName
+	@Name nvarchar(150)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT * FROM Actors
+	WHERE Name LIKE '%' + @Name + '%'
+END
+GO

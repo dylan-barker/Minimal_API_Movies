@@ -10,5 +10,6 @@ namespace Minimal_API_Movies.Repositories
         Task<bool> Exist(int id);
         Task Update(Actor actor);
         Task Delete(int id);
+        Task<List<Actor>> GetByName(string name);
     }
 }

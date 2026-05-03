@@ -77,5 +77,16 @@ namespace Minimal_API_Movies.Repositories
                     new { actor.Id, actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
             }
         }
+
+        public async Task<List<Actor>> GetByName(string name)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Actors_GetByName";
+                var actors = await connection.QueryAsync<Actor>(procedure,
+                    new { name }, commandType: CommandType.StoredProcedure);
+                return actors.ToList();
+            }
+        }
     }
 }
