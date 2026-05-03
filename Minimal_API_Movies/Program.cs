@@ -1,5 +1,6 @@
 using Minimal_API_Movies.Endpoints;
 using Minimal_API_Movies.Repositories;
+using Minimal_API_Movies.Services;
 using Minimal_API_Movies.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // services
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
+
+builder.Services.AddTransient<IFileStorage, AzureFileStorage>();
 
 builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
 
