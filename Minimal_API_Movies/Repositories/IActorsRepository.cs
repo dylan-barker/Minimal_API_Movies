@@ -1,11 +1,12 @@
-﻿using Minimal_API_Movies.Entities;
+﻿using Minimal_API_Movies.DTOs;
+using Minimal_API_Movies.Entities;
 
 namespace Minimal_API_Movies.Repositories
 {
     public interface IActorsRepository
     {
         Task<int> Create(Actor actor);
-        Task<List<Actor>> GetAll();
+        Task<List<Actor>> GetAll(PaginationDTO pagination);
         Task<Actor?> GetById(int id);
         Task<bool> Exist(int id);
         Task Update(Actor actor);

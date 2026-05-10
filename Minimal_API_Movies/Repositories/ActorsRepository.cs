@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Entities;
 using System.Data;
 
@@ -8,10 +9,13 @@ namespace Minimal_API_Movies.Repositories
     public class ActorsRepository : IActorsRepository
     {
         private readonly string connectionString;
+        private readonly HttpContext httpContext;
 
-        public ActorsRepository(IConfiguration configuration)
+        public ActorsRepository(IConfiguration configuration, 
+            IHttpContextAccessor httpContextAccessor)
         {
             connectionString = configuration.GetConnectionString("DefaultConnection")!;
+            httpContext = httpContextAccessor.HttpContext!;
         }
 
         public async Task<int> Create(Actor actor)
@@ -19,7 +23,7 @@ namespace Minimal_API_Movies.Repositories
             using (var connection = new SqlConnection(connectionString))
             {
                 var procedure = "Actors_Create";
-                var id = await connection.QuerySingleAsync<int>(procedure,
+                var id = await connection.QuerySingleOrDefaultAsync<int>(procedure,
                     new { actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
                 actor.Id = id;
                 return id;
@@ -47,12 +51,20 @@ namespace Minimal_API_Movies.Repositories
             }
         }
 
-        public async Task<List<Actor>> GetAll()
+        public async Task<List<Actor>> GetAll(PaginationDTO pagination)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 var procedure = "Actors_GetAll";
-                var actors = await connection.QueryAsync<Actor>(procedure, commandType: CommandType.StoredProcedure);
+                var actors = await connection.QueryAsync<Actor>(procedure, new { pagination.Page, pagination.RecordsPerPage },
+                    commandType: CommandType.StoredProcedure);
+
+                var procedureCount = "Actors_Count";
+                var actorsCount = await connection.QuerySingleAsync<int>(procedureCount, 
+                    commandType: CommandType.StoredProcedure);
+
+                httpContext.Response.Headers.Append("totalAmountOfRecords", actorsCount.ToString());
+
                 return actors.ToList();
             }
         }

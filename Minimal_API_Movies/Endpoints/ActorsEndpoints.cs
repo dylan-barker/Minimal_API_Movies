@@ -19,12 +19,16 @@ namespace Minimal_API_Movies.Endpoints
             group.MapGet("/{id:int}", GetById);
             group.MapGet("/getByName/{name}", GetByName);
             group.MapPost("/", Create).DisableAntiforgery();
+            group.MapPut("/{id:int}", Update).DisableAntiforgery();
+            group.MapDelete("/{id:int}", Delete).DisableAntiforgery();
             return group;
         }
 
-        static async Task<Ok<List<ActorDTO>>> GetAll(IActorsRepository repository, IMapper mapper)
+        static async Task<Ok<List<ActorDTO>>> GetAll(IActorsRepository repository, IMapper mapper,
+            int page = 1, int recordsPerPage = 10)
         {
-            var actors = await repository.GetAll();
+            var pagination = new PaginationDTO { Page = page, RecordsPerPage = recordsPerPage };
+            var actors = await repository.GetAll(pagination);
             var actorsDTO = mapper.Map<List<ActorDTO>>(actors);
             return TypedResults.Ok(actorsDTO);
         }
@@ -43,7 +47,7 @@ namespace Minimal_API_Movies.Endpoints
         static async Task<Created<ActorDTO>> Create([FromForm] CreateActorDTO createActorDTO,
             IActorsRepository repository, IOutputCacheStore cacheStore, IMapper mapper,
             IFileStorage fileStorage)
-        { 
+        {
             var actor = mapper.Map<Actor>(createActorDTO);
             if (createActorDTO.Picture != null)
             {
@@ -61,6 +65,45 @@ namespace Minimal_API_Movies.Endpoints
             var actors = await repository.GetByName(name);
             var actorsDTO = mapper.Map<List<ActorDTO>>(actors);
             return TypedResults.Ok(actorsDTO);
+        }
+
+        static async Task<Results<NoContent, NotFound>> Update(int id, [FromForm] CreateActorDTO createActorDTO,
+            IActorsRepository repository, IMapper mapper, IFileStorage fileStorage, IOutputCacheStore outputCacheStore)
+        {
+            var actor = await repository.GetById(id);
+            if (actor is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            var actorForUpdate = mapper.Map<Actor>(createActorDTO);
+            actorForUpdate.Id = id;
+            actorForUpdate.Picture = actor.Picture;
+
+            if (createActorDTO.Picture is not null)
+            {
+                var url = await fileStorage.Edit(actorForUpdate.Picture, container, createActorDTO.Picture);
+                actorForUpdate.Picture = url;
+            }
+
+            await repository.Update(actorForUpdate);
+            await outputCacheStore.EvictByTagAsync("actors-get", default);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound>> Delete(int id, IActorsRepository repository,
+            IOutputCacheStore outputCacheStore, IFileStorage fileStorage)
+        {
+            var actor = await repository.GetById(id);
+            if (actor is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            await repository.Delete(id);
+            await fileStorage.Delete(actor.Picture, container);
+            await outputCacheStore.EvictByTagAsync("actors-get", default);
+            return TypedResults.NoContent();
         }
     }
 }
