@@ -18,10 +18,12 @@ namespace Minimal_API_Movies.Endpoints
             group.MapGet("/with-actors", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(1))).WithTags("movies-get");
             group.MapGet("/{id:int}", GetById);
+            group.MapPut("/{id:int}", Update).DisableAntiforgery();
+            group.MapDelete("/{id:int}", Delete);
             return group;
         }
 
-        static async Task<Ok<List<MovieDTO>>> GetAll(IMapper mapper, IMoviesRepository moviesRepository, 
+        static async Task<Ok<List<MovieDTO>>> GetAll(IMapper mapper, IMoviesRepository moviesRepository,
             int page = 1, int recordsPerPage = 10)
         {
             var pagination = new PaginationDTO { Page = page, RecordsPerPage = recordsPerPage };
@@ -30,7 +32,7 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.Ok(moviesDTO);
         }
 
-        static async Task<Results<Ok<MovieDTO>, NotFound>> GetById(int id, IMapper mapper, 
+        static async Task<Results<Ok<MovieDTO>, NotFound>> GetById(int id, IMapper mapper,
             IMoviesRepository moviesRepository)
         {
             var movie = await moviesRepository.GetById(id);
@@ -58,6 +60,45 @@ namespace Minimal_API_Movies.Endpoints
             await outputCacheStore.EvictByTagAsync("movies-get", default);
             var movieDTO = mapper.Map<MovieDTO>(movie);
             return TypedResults.Created($"/movies/{movie.Id}", movieDTO);
+        }
+
+        static async Task<Results<Ok<MovieDTO>, NotFound, NoContent>> Update(int id, [FromForm] CreateMovieDTO createMovieDto,
+            IFileStorage fileStorage, IOutputCacheStore outputCacheStore, IMapper mapper,
+            IMoviesRepository moviesRepository)
+        {
+            var movie = await moviesRepository.GetById(id);
+            if (movie is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            var movieForUpdate = mapper.Map<Movie>(createMovieDto);
+            movieForUpdate.Id = id;
+            movieForUpdate.Poster = movie.Poster;
+            if (createMovieDto.Poster is not null)
+            {
+                var url = await fileStorage.Edit(movieForUpdate.Poster, container, createMovieDto.Poster);
+                movieForUpdate.Poster = url;
+            }
+
+            await moviesRepository.Update(movieForUpdate);
+            await outputCacheStore.EvictByTagAsync("movies-get", default);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound>> Delete(int id, IFileStorage fileStorage,
+            IOutputCacheStore outputCacheStore, IMapper mapper, IMoviesRepository moviesRepository)
+        {
+            var movie = await moviesRepository.GetById(id);
+            if (movie is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            await moviesRepository.Delete(id);
+            await fileStorage.Delete(movie.Poster, container);
+            await outputCacheStore.EvictByTagAsync("movies-get", default);
+            return TypedResults.NoContent();
         }
     }
 }
