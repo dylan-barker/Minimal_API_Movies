@@ -32,7 +32,7 @@ namespace Minimal_API_Movies.Repositories
             using (var connection = new SqlConnection(connectionString))
             {
                 var comments = await connection.QueryAsync<Comment>(
-                    "Comments_GetAllByMovieId", new { movieId },
+                    "Comments_GetByMovieId", new { movieId },
                     commandType: CommandType.StoredProcedure);
                 return comments.ToList();
             }
