@@ -20,6 +20,7 @@ namespace Minimal_API_Movies.Endpoints
             group.MapGet("/{id:int}", GetById);
             group.MapPut("/{id:int}", Update).DisableAntiforgery();
             group.MapDelete("/{id:int}", Delete);
+            group.MapPost("/{id:int}/genres", AssignGenres);
             return group;
         }
 
@@ -98,6 +99,30 @@ namespace Minimal_API_Movies.Endpoints
             await moviesRepository.Delete(id);
             await fileStorage.Delete(movie.Poster, container);
             await outputCacheStore.EvictByTagAsync("movies-get", default);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound, BadRequest<string>>> AssignGenres(int id, List<int> genreIds,
+            IMoviesRepository moviesRepository, IGenresRepository genresRepository)
+        {
+            if (!await moviesRepository.Exists(id))
+            {
+                return TypedResults.NotFound();
+            }
+
+            var existingGenres = new List<int>();
+
+            if (genreIds.Count != 0)
+            {
+                existingGenres = await genresRepository.Exists(genreIds);
+            }
+            if (existingGenres.Count != genreIds.Count)
+            {
+                var nonExistingGenres = genreIds.Except(existingGenres);
+                return TypedResults.BadRequest("One or more genre IDs are invalid.");
+            }
+
+            await moviesRepository.Assign(id, genreIds);
             return TypedResults.NoContent();
         }
     }
