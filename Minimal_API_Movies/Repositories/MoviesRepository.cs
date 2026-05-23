@@ -52,11 +52,16 @@ namespace Minimal_API_Movies.Repositories
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var movie = await connection.QueryFirstOrDefaultAsync<Movie>(
+                using (var multi = await connection.QueryMultipleAsync(
                     "Movies_GetById",
-                    new { Id = id },
-                    commandType: CommandType.StoredProcedure);
-                return movie;
+                    new { id },
+                    commandType: CommandType.StoredProcedure))
+                {
+                    var movie = await multi.ReadFirstAsync<Movie>();
+                    var comments = await multi.ReadAsync<Comment>();
+                    movie.Comments = comments.ToList();
+                    return movie;
+                }
             }
         }
 
