@@ -59,7 +59,27 @@ namespace Minimal_API_Movies.Repositories
                 {
                     var movie = await multi.ReadFirstAsync<Movie>();
                     var comments = await multi.ReadAsync<Comment>();
+                    var genres = await multi.ReadAsync<Genre>();
+                    var actors = await multi.ReadAsync<ActorMovie>();
                     movie.Comments = comments.ToList();
+                    foreach (var genre in genres)
+                    {
+                        movie.GenresMovies.Add(new GenreMovie 
+                        { 
+                            GenreId = genre.Id,
+                            Genre = genre
+                        });
+                    }
+                    foreach (var actor in actors)
+                    {
+                        movie.ActorsMovies.Add(new ActorMovie
+                        {
+                            ActorId = actor.ActorId,
+                            Character = actor.Character,
+                            Actor = new Actor { Name = actor.Name },
+                            Order = actor.Order
+                        });
+                    }
                     return movie;
                 }
             }
@@ -114,6 +134,32 @@ namespace Minimal_API_Movies.Repositories
                 await connection.ExecuteAsync(
                     "Movies_AssignGenres",
                     new { MovieId = id, GenresIds = dt },
+                    commandType: CommandType.StoredProcedure);
+            }
+        }
+
+        public async Task Assign(int id, List<ActorMovie> actors)
+        {
+            for (int i = 1; i <= actors.Count; i++)
+            {
+                actors[i - 1].Order = i;
+            }
+
+            var dt = new DataTable();
+            dt.Columns.Add("ActorId", typeof(int));
+            dt.Columns.Add("Character", typeof(string));
+            dt.Columns.Add("Order", typeof(int));
+
+            foreach (var actorMovie in actors)
+            {
+                dt.Rows.Add(actorMovie.ActorId, actorMovie.Character, actorMovie.Order);
+            }
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(
+                    "Movies_AssignActors",
+                    new { MovieId = id, Actors = dt },
                     commandType: CommandType.StoredProcedure);
             }
         }

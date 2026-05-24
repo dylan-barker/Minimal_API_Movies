@@ -11,7 +11,7 @@ namespace Minimal_API_Movies.Repositories
         private readonly string connectionString;
         private readonly HttpContext httpContext;
 
-        public ActorsRepository(IConfiguration configuration, 
+        public ActorsRepository(IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor)
         {
             connectionString = configuration.GetConnectionString("DefaultConnection")!;
@@ -51,6 +51,27 @@ namespace Minimal_API_Movies.Repositories
             }
         }
 
+        public async Task<List<int>> Exists(List<int> ids)
+        {
+            var dt = new DataTable();
+            dt.Columns.Add("Id", typeof(int));
+
+            foreach (var id in ids)
+            {
+                dt.Rows.Add(id);
+            }
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Actors_GetBySeveralIds";
+                var existingIds = await connection.QueryAsync<int>(
+                    procedure,
+                    new { actorIds = dt }, 
+                    commandType: CommandType.StoredProcedure);
+                return existingIds.ToList();
+            }
+        }
+
         public async Task<List<Actor>> GetAll(PaginationDTO pagination)
         {
             using (var connection = new SqlConnection(connectionString))
@@ -60,7 +81,7 @@ namespace Minimal_API_Movies.Repositories
                     commandType: CommandType.StoredProcedure);
 
                 var procedureCount = "Actors_Count";
-                var actorsCount = await connection.QuerySingleAsync<int>(procedureCount, 
+                var actorsCount = await connection.QuerySingleAsync<int>(procedureCount,
                     commandType: CommandType.StoredProcedure);
 
                 httpContext.Response.Headers.Append("totalAmountOfRecords", actorsCount.ToString());
