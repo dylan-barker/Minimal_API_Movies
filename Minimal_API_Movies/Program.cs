@@ -1,3 +1,4 @@
+using FluentValidation;
 using Minimal_API_Movies.Endpoints;
 using Minimal_API_Movies.Repositories;
 using Minimal_API_Movies.Services;
@@ -16,6 +17,8 @@ builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddCors(options =>
 {

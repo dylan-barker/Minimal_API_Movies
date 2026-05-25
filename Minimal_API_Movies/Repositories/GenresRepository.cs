@@ -57,10 +57,23 @@ namespace Minimal_API_Movies.Repositories
             {
                 var procedure = "Genres_ExistMultiple";
                 var idsOfGenresThatExists = await connection.QueryAsync<int>(
-                    procedure, 
-                    new { genresIds = dt }, 
+                    procedure,
+                    new { genresIds = dt },
                     commandType: CommandType.StoredProcedure);
                 return idsOfGenresThatExists.ToList();
+            }
+        }
+
+        public async Task<bool> Exists(int id, string name)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var procedure = "Genres_ExistsByIdAndName";
+                var exists = await connection.QuerySingleAsync<bool>(
+                    procedure,
+                    new { id, name },
+                    commandType: CommandType.StoredProcedure);
+                return exists;
             }
         }
 
