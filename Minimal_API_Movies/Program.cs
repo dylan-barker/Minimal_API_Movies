@@ -3,6 +3,7 @@ using Minimal_API_Movies.Endpoints;
 using Minimal_API_Movies.Repositories;
 using Minimal_API_Movies.Services;
 using Minimal_API_Movies.Utils;
+using Minimal_API_Movies.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAutoMapper(x => x.AddProfile<AutoMapperProfiles>());
 
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateGenreDTOValidator>();
 
 builder.Services.AddCors(options =>
 {

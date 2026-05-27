@@ -60,9 +60,20 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.Created($"/genres/{genre.Id}", genreDTO);
         }
 
-        static async Task<Results<NotFound, NoContent>> UpdateGenre(int id, CreateGenreDTO createGenreDTO, IGenresRepository genresRepository,
-            IOutputCacheStore outputCacheStore, IMapper mapper)
+        static async Task<Results<NotFound, NoContent, ValidationProblem>> UpdateGenre(
+            int id, 
+            CreateGenreDTO createGenreDTO, 
+            IGenresRepository genresRepository,
+            IOutputCacheStore outputCacheStore, 
+            IMapper mapper,
+            IValidator<CreateGenreDTO> validator)
         {
+            var validationResult = await validator.ValidateAsync(createGenreDTO);
+            if (!validationResult.IsValid) 
+            {
+                return TypedResults.ValidationProblem(validationResult.ToDictionary());
+            }
+
             var exists = await genresRepository.Exists(id);
             if (!exists)
             {
