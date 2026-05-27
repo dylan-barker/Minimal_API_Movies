@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Entities;
+using Minimal_API_Movies.Filters;
 using Minimal_API_Movies.Repositories;
 
 namespace Minimal_API_Movies.Endpoints
@@ -16,8 +17,8 @@ namespace Minimal_API_Movies.Endpoints
             group.MapGet("/", GetGenres)
                 .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")); // Cache the response for 30 seconds
             group.MapGet("/{id:int}", GetGenreById);
-            group.MapPost("/", CreateGenre);
-            group.MapPut("/{id:int}", UpdateGenre);
+            group.MapPost("/", CreateGenre).AddEndpointFilter<GenresValidationFilter>();
+            group.MapPut("/{id:int}", UpdateGenre).AddEndpointFilter<GenresValidationFilter>();
             group.MapDelete("/{id:int}", DeleteGenre);
             return group;
         }
@@ -41,18 +42,11 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.Ok(genreDTO);
         }
 
-        static async Task<Results<Created<GenreDTO>, ValidationProblem>> CreateGenre(
+        static async Task<Created<GenreDTO>> CreateGenre(
             CreateGenreDTO createGenreDTO, 
             IGenresRepository genresRepository,
-            IOutputCacheStore outputCacheStore, IMapper mapper, 
-            IValidator<CreateGenreDTO> validator)
+            IOutputCacheStore outputCacheStore, IMapper mapper)
         {
-            var validationResult = await validator.ValidateAsync(createGenreDTO);
-            if (!validationResult.IsValid)
-            {
-                return TypedResults.ValidationProblem(validationResult.ToDictionary());
-            }
-
             var genre = mapper.Map<Genre>(createGenreDTO);
             await genresRepository.Create(genre);
             await outputCacheStore.EvictByTagAsync("genres-get", default);
@@ -60,20 +54,13 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.Created($"/genres/{genre.Id}", genreDTO);
         }
 
-        static async Task<Results<NotFound, NoContent, ValidationProblem>> UpdateGenre(
+        static async Task<Results<NotFound, NoContent>> UpdateGenre(
             int id, 
             CreateGenreDTO createGenreDTO, 
             IGenresRepository genresRepository,
             IOutputCacheStore outputCacheStore, 
-            IMapper mapper,
-            IValidator<CreateGenreDTO> validator)
+            IMapper mapper)
         {
-            var validationResult = await validator.ValidateAsync(createGenreDTO);
-            if (!validationResult.IsValid) 
-            {
-                return TypedResults.ValidationProblem(validationResult.ToDictionary());
-            }
-
             var exists = await genresRepository.Exists(id);
             if (!exists)
             {

@@ -21,25 +21,16 @@ namespace Minimal_API_Movies.Validations
             }
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .MaximumLength(150).WithMessage("{PropertyName} cannot exceed 150 characters.")
-                .Must(FirstLetterIsUppercase).WithMessage("{PropertyName} must start with an uppercase letter.")
+                .NotEmpty().WithMessage(ValidationUtilities.NotEmptyMessage)
+                .MaximumLength(150).WithMessage(ValidationUtilities.MaxLengthMessage)
+                .Must(ValidationUtilities.FirstLetterIsUppercase).WithMessage(ValidationUtilities.FirstLetterUppercaseMessage)
                 .MustAsync(async (name, _) =>
                 {
                     var exists = await genresRepository.Exists(id, name);
                     return !exists;
                 }).WithMessage(g => $"{g.Name} is already in use.");
-            HttpContextAccessor = httpContextAccessor;
         }
 
-        public IHttpContextAccessor HttpContextAccessor { get; }
-
-        private bool FirstLetterIsUppercase(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return true;
-            var firstLetter = value[0].ToString();
-            return firstLetter == firstLetter.ToUpper();
-        }
+        
     }
 }
