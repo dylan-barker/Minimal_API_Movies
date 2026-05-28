@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
-using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Entities;
+using Minimal_API_Movies.Filters;
 using Minimal_API_Movies.Repositories;
 using Minimal_API_Movies.Services;
 
@@ -19,8 +19,8 @@ namespace Minimal_API_Movies.Endpoints
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(2)).Tag("actors-get"));
             group.MapGet("/{id:int}", GetById);
             group.MapGet("/getByName/{name}", GetByName);
-            group.MapPost("/", Create).DisableAntiforgery();
-            group.MapPut("/{id:int}", Update).DisableAntiforgery();
+            group.MapPost("/", Create).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
+            group.MapPut("/{id:int}", Update).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
             group.MapDelete("/{id:int}", Delete).DisableAntiforgery();
             return group;
         }
@@ -45,20 +45,13 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.Ok(actorDTO);
         }
 
-        static async Task<Results<Created<ActorDTO>, ValidationProblem>> Create(
+        static async Task<Created<ActorDTO>> Create(
             [FromForm] CreateActorDTO createActorDTO,
-            IActorsRepository repository, 
-            IOutputCacheStore cacheStore, 
+            IActorsRepository repository,
+            IOutputCacheStore cacheStore,
             IMapper mapper,
-            IFileStorage fileStorage,
-            IValidator<CreateActorDTO> validator)
+            IFileStorage fileStorage)
         {
-            var validationResult = await validator.ValidateAsync(createActorDTO);
-            if (!validationResult.IsValid)
-            {
-                return TypedResults.ValidationProblem(validationResult.ToDictionary());
-            }
-
             var actor = mapper.Map<Actor>(createActorDTO);
             if (createActorDTO.Picture != null)
             {
