@@ -5,6 +5,8 @@
         public static string NotEmptyMessage = "{PropertyName} is required.";
         public static string MaxLengthMessage = "{PropertyName} cannot exceed 150 characters.";
         public static string FirstLetterUppercaseMessage = "{PropertyName} must start with an uppercase letter.";
+        public static string EmailAddressMessage = "{PropertyName} must be a valid email address.";
+
         public static string GreaterThanDateMessage(DateTime value) => "{PropertyName} must be after " + value.ToString("yyyy-MM-dd");
 
         public static bool FirstLetterIsUppercase(string value)

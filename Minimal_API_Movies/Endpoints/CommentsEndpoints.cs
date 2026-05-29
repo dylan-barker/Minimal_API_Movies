@@ -5,6 +5,7 @@ using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Entities;
 using Minimal_API_Movies.Filters;
 using Minimal_API_Movies.Repositories;
+using Minimal_API_Movies.Services;
 
 namespace Minimal_API_Movies.Endpoints
 {
@@ -12,7 +13,9 @@ namespace Minimal_API_Movies.Endpoints
     {
         public static RouteGroupBuilder MapComments(this RouteGroupBuilder group)
         {
-            group.MapPost("/", Create).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
+            group.MapPost("/", Create)
+                .AddEndpointFilter<ValidationFilter<CreateCommentDTO>>()
+                .RequireAuthorization();
             group.MapGet("/", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(1)).Tag("comments-get"));
             group.MapGet("/{commentId:int}", GetById).WithName("GetCommentById");
@@ -59,21 +62,30 @@ namespace Minimal_API_Movies.Endpoints
             var commentDTO = mapper.Map<CommentDTO>(comment);
             return TypedResults.Ok(commentDTO);
         }
-        static async Task<Results<CreatedAtRoute<CommentDTO>, NotFound>> Create(
+        static async Task<Results<CreatedAtRoute<CommentDTO>, NotFound, BadRequest<string>>> Create(
             int movieId,
             CreateCommentDTO createCommentDTO,
             ICommentsRepository commentsRepository,
             IMoviesRepository moviesRepository,
             IMapper mapper,
-            IOutputCacheStore outputCacheStore)
+            IOutputCacheStore outputCacheStore,
+            IUsersService usersService)
         {
             if (!await moviesRepository.Exists(movieId))
             {
                 return TypedResults.NotFound();
             }
 
+            var user = await usersService.GetUser();
+
+            if (user is null)
+            {
+                return TypedResults.BadRequest("User not found");
+            }
+
             var comment = mapper.Map<Comment>(createCommentDTO);
             comment.MovieId = movieId;
+            comment.UserId = user.Id;
             var id = await commentsRepository.Create(comment);
             await outputCacheStore.EvictByTagAsync("comments-get", default);
             var commentDTO = mapper.Map<CommentDTO>(comment);

@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using Minimal_API_Movies.DTOs;
@@ -15,7 +14,8 @@ namespace Minimal_API_Movies.Endpoints
         public static RouteGroupBuilder MapGenres(this RouteGroupBuilder group)
         {
             group.MapGet("/", GetGenres)
-                .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")); // Cache the response for 30 seconds
+                .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")) // Cache the response for 30 seconds
+                .RequireAuthorization();
             group.MapGet("/{id:int}", GetGenreById);
             group.MapPost("/", CreateGenre).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
             group.MapPut("/{id:int}", UpdateGenre).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
@@ -43,7 +43,7 @@ namespace Minimal_API_Movies.Endpoints
         }
 
         static async Task<Created<GenreDTO>> CreateGenre(
-            CreateGenreDTO createGenreDTO, 
+            CreateGenreDTO createGenreDTO,
             IGenresRepository genresRepository,
             IOutputCacheStore outputCacheStore, IMapper mapper)
         {
@@ -55,10 +55,10 @@ namespace Minimal_API_Movies.Endpoints
         }
 
         static async Task<Results<NotFound, NoContent>> UpdateGenre(
-            int id, 
-            CreateGenreDTO createGenreDTO, 
+            int id,
+            CreateGenreDTO createGenreDTO,
             IGenresRepository genresRepository,
-            IOutputCacheStore outputCacheStore, 
+            IOutputCacheStore outputCacheStore,
             IMapper mapper)
         {
             var exists = await genresRepository.Exists(id);
