@@ -50,7 +50,10 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("isadmin", policy => policy.RequireRole("isadmin"));
+});
 
 builder.Services.AddCors(options =>
 {

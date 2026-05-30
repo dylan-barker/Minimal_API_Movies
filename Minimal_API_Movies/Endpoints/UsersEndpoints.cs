@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Filters;
+using Minimal_API_Movies.Services;
 using Minimal_API_Movies.Utils;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,8 +17,20 @@ namespace Minimal_API_Movies.Endpoints
         {
             group.MapPost("/register", Register)
                 .AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
+
             group.MapPost("/login", Login)
                 .AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
+
+            group.MapPost("/makeadmin", MakeAdmin)
+                .AddEndpointFilter<ValidationFilter<EditClaimDTO>>()
+                .RequireAuthorization("isadmin");
+
+            group.MapPost("/removeadmin", RemoveAdmin)
+                .AddEndpointFilter<ValidationFilter<EditClaimDTO>>()
+                .RequireAuthorization("isadmin");
+
+            group.MapGet("/renewtoken", RenewToken)
+                .RequireAuthorization();
             return group;
         }
 
@@ -62,11 +75,11 @@ namespace Minimal_API_Movies.Endpoints
             }
 
             var result = await signInManager.CheckPasswordSignInAsync(
-                user, 
-                userCredentialsDTO.Password, 
+                user,
+                userCredentialsDTO.Password,
                 lockoutOnFailure: false);
 
-            if (result.Succeeded) 
+            if (result.Succeeded)
             {
                 var authenticationResponse = await
                     BuildToken(
@@ -81,6 +94,51 @@ namespace Minimal_API_Movies.Endpoints
             }
         }
 
+        static async Task<Results<NoContent, NotFound>> MakeAdmin(
+            EditClaimDTO editClaimDTO,
+            [FromServices] UserManager<IdentityUser> userManager)
+        {
+            var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+            if (user is null)
+            {
+                return TypedResults.NotFound();
+            }
+            await userManager.AddClaimAsync(user, new Claim("isadmin", "true"));
+            return TypedResults.NoContent();
+        }
+        static async Task<Results<NoContent, NotFound>> RemoveAdmin(
+            EditClaimDTO editClaimDTO,
+            [FromServices] UserManager<IdentityUser> userManager)
+        {
+            var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+            if (user is null)
+            {
+                return TypedResults.NotFound();
+            }
+            await userManager.RemoveClaimAsync(user, new Claim("isadmin", "true"));
+            return TypedResults.NoContent();
+        }
+
+        private static async Task<Results<NotFound, Ok<AuthenticationResponseDTO>>> RenewToken(
+            IUsersService usersService,
+            IConfiguration configuration,
+            [FromServices] UserManager<IdentityUser> userManager)
+        {
+            var user = await usersService.GetUser();
+            if (user is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            var userCredentials = new UserCredentialsDTO
+            {
+                Email = user.Email!
+            };
+
+            var response = await BuildToken(userCredentials, configuration, userManager);
+            return TypedResults.Ok(response);
+        }
+
         private async static Task<AuthenticationResponseDTO> BuildToken(
             UserCredentialsDTO userCredentialsDTO,
             IConfiguration configuration,
@@ -90,6 +148,11 @@ namespace Minimal_API_Movies.Endpoints
             {
                 new Claim("email", userCredentialsDTO.Email),
             };
+
+            var user = await userManager.FindByNameAsync(userCredentialsDTO.Email);
+            var claimsFromDb = await userManager.GetClaimsAsync(user!);
+
+            claims.AddRange(claimsFromDb);
 
             var key = KeysHandler.GetKey(configuration, KeysHandler.OurIssuer).First();
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

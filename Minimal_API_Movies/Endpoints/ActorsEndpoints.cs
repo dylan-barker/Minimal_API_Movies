@@ -17,11 +17,24 @@ namespace Minimal_API_Movies.Endpoints
         {
             group.MapGet("/", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(2)).Tag("actors-get"));
+
             group.MapGet("/{id:int}", GetById);
+
             group.MapGet("/getByName/{name}", GetByName);
-            group.MapPost("/", Create).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
-            group.MapPut("/{id:int}", Update).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
-            group.MapDelete("/{id:int}", Delete).DisableAntiforgery();
+
+            group.MapPost("/", Create)
+                .DisableAntiforgery()
+                .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
+                .RequireAuthorization("isadmin");
+
+            group.MapPut("/{id:int}", Update)
+                .DisableAntiforgery()
+                .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
+                .RequireAuthorization("isadmin");
+
+            group.MapDelete("/{id:int}", Delete)
+                .DisableAntiforgery()
+                .RequireAuthorization("isadmin");
             return group;
         }
 

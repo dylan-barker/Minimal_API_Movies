@@ -15,14 +15,28 @@ namespace Minimal_API_Movies.Endpoints
         private readonly static string container = "movies";
         public static RouteGroupBuilder MapMovies(this RouteGroupBuilder group)
         {
-            group.MapPost("/", Create).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateMovieDTO>>();
+            group.MapPost("/", Create).DisableAntiforgery()
+                .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
+                .RequireAuthorization("isadmin");
+
             group.MapGet("/with-actors", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(1))).WithTags("movies-get");
+
             group.MapGet("/{id:int}", GetById);
-            group.MapPut("/{id:int}", Update).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateMovieDTO>>();
-            group.MapDelete("/{id:int}", Delete);
-            group.MapPost("/{id:int}/genres", AssignGenres);
-            group.MapPost("/{id:int}/actors", AssignActors);
+
+            group.MapPut("/{id:int}", Update)
+                .DisableAntiforgery()
+                .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
+                .RequireAuthorization("isadmin");
+
+            group.MapDelete("/{id:int}", Delete)
+                .RequireAuthorization("isadmin");
+
+            group.MapPost("/{id:int}/genres", AssignGenres)
+                .RequireAuthorization("isadmin");
+
+            group.MapPost("/{id:int}/actors", AssignActors)
+                .RequireAuthorization("isadmin");
             return group;
         }
 

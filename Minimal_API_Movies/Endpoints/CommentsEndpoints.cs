@@ -19,8 +19,11 @@ namespace Minimal_API_Movies.Endpoints
             group.MapGet("/", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(1)).Tag("comments-get"));
             group.MapGet("/{commentId:int}", GetById).WithName("GetCommentById");
-            group.MapPut("/{commentId:int}", Update).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
-            group.MapDelete("/{commentId:int}", Delete);
+            group.MapPut("/{commentId:int}", Update)
+                .AddEndpointFilter<ValidationFilter<CreateCommentDTO>>()
+                .RequireAuthorization();
+            group.MapDelete("/{commentId:int}", Delete)
+                .RequireAuthorization();
             return group;
         }
 
@@ -92,44 +95,74 @@ namespace Minimal_API_Movies.Endpoints
             return TypedResults.CreatedAtRoute(commentDTO, "GetCommentById", new { id, movieId });
         }
 
-        static async Task<Results<NoContent, NotFound>> Update(
+        static async Task<Results<NoContent, NotFound, ForbidHttpResult>> Update(
             int movieId, int commentId,
             CreateCommentDTO createCommentDTO,
             ICommentsRepository commentsRepository,
             IMoviesRepository moviesRepository,
             IMapper mapper,
-            IOutputCacheStore outputCacheStore)
+            IOutputCacheStore outputCacheStore, IUsersService usersService)
         {
             if (!await moviesRepository.Exists(movieId))
             {
                 return TypedResults.NotFound();
             }
-            if (!await commentsRepository.Exists(commentId))
+
+            var commentFromDB = await commentsRepository.GetById(commentId);
+
+            if (commentFromDB is null)
             {
                 return TypedResults.NotFound();
             }
-            var comment = mapper.Map<Comment>(createCommentDTO);
-            comment.Id = commentId;
-            comment.MovieId = movieId;
-            await commentsRepository.Update(comment);
+
+            var user = await usersService.GetUser();
+
+            if (user is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            if (commentFromDB.UserId != user.Id)
+            {
+                return TypedResults.Forbid();
+            }
+
+            commentFromDB.Body = createCommentDTO.Body;
+
+            await commentsRepository.Update(commentFromDB);
             await outputCacheStore.EvictByTagAsync("comments-get", default);
             return TypedResults.NoContent();
         }
 
-        static async Task<Results<NoContent, NotFound>> Delete(
+        static async Task<Results<NoContent, NotFound, ForbidHttpResult>> Delete(
             int movieId, int commentId,
             ICommentsRepository commentsRepository,
             IMoviesRepository moviesRepository,
             IMapper mapper,
-            IOutputCacheStore outputCacheStore)
+            IOutputCacheStore outputCacheStore,
+            IUsersService usersService)
         {
             if (!await moviesRepository.Exists(movieId))
             {
                 return TypedResults.NotFound();
             }
-            if (!await commentsRepository.Exists(commentId))
+            var commentFromDB = await commentsRepository.GetById(commentId);
+
+            if (commentFromDB is null)
             {
                 return TypedResults.NotFound();
+            }
+
+            var user = await usersService.GetUser();
+
+            if (user is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            if (commentFromDB.UserId != user.Id)
+            {
+                return TypedResults.Forbid();
             }
 
             await commentsRepository.Delete(commentId);
