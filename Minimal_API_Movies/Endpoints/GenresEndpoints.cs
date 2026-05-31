@@ -14,8 +14,7 @@ namespace Minimal_API_Movies.Endpoints
         public static RouteGroupBuilder MapGenres(this RouteGroupBuilder group)
         {
             group.MapGet("/", GetGenres)
-                .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")) // Cache the response for 30 seconds
-                .RequireAuthorization();
+                .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(30)).Tag("genres-get")); // Cache the response for 30 seconds
 
             group.MapGet("/{id:int}", GetGenreById);
 
@@ -25,15 +24,30 @@ namespace Minimal_API_Movies.Endpoints
 
             group.MapPut("/{id:int}", UpdateGenre)
                 .AddEndpointFilter<ValidationFilter<CreateGenreDTO>>()
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi(options =>
+                {
+                    options.Summary = "Updates a genre by id.";
+                    options.Description = "Updates a genre by id. Requires admin role.";
+                    options.Parameters[0].Description = "The id of the genre to update.";
+                    options.RequestBody.Description = "The genre to update.";
+                    return options;
+                });
 
             group.MapDelete("/{id:int}", DeleteGenre)
                 .RequireAuthorization("isadmin");
             return group;
         }
 
-        static async Task<Ok<List<GenreDTO>>> GetGenres(IGenresRepository genresRepository, IMapper mapper)
+        static async Task<Ok<List<GenreDTO>>> GetGenres(
+            IGenresRepository genresRepository,
+            IMapper mapper,
+            ILoggerFactory loggerFactory)
         {
+            var type = typeof(GenresEndpoints);
+            var logger = loggerFactory.CreateLogger(type.FullName!);
+            logger.LogInformation("Getting all genres");
+
             var genres = await genresRepository.GetAll();
             var genresDTO = mapper.Map<List<GenreDTO>>(genres);
 

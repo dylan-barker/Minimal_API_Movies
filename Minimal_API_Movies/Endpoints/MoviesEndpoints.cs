@@ -17,7 +17,8 @@ namespace Minimal_API_Movies.Endpoints
         {
             group.MapPost("/", Create).DisableAntiforgery()
                 .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
 
             group.MapGet("/with-actors", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(1))).WithTags("movies-get");
@@ -27,16 +28,19 @@ namespace Minimal_API_Movies.Endpoints
             group.MapPut("/{id:int}", Update)
                 .DisableAntiforgery()
                 .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
 
             group.MapDelete("/{id:int}", Delete)
                 .RequireAuthorization("isadmin");
 
             group.MapPost("/{id:int}/genres", AssignGenres)
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
 
             group.MapPost("/{id:int}/actors", AssignActors)
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
             return group;
         }
 

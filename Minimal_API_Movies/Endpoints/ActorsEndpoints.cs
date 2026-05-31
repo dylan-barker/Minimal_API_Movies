@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
 using Minimal_API_Movies.DTOs;
 using Minimal_API_Movies.Entities;
 using Minimal_API_Movies.Filters;
@@ -17,6 +19,32 @@ namespace Minimal_API_Movies.Endpoints
         {
             group.MapGet("/", GetAll)
                 .CacheOutput(c => c.Expire(TimeSpan.FromMinutes(2)).Tag("actors-get"));
+                //.WithOpenApi(options =>
+                //{
+                //    options.Parameters.Add(new OpenApiParameter
+                //    {
+                //        Name = "Page",
+                //        In = ParameterLocation.Query,
+                //        Schema = new OpenApiSchema 
+                //        { 
+                //            Type = "integer", 
+                //            Default = new OpenApiInteger(1) 
+                //        }
+                //    });
+
+                //    options.Parameters.Add(new OpenApiParameter
+                //    {
+                //        Name = "RecordsPerPage",
+                //        In = ParameterLocation.Query,
+                //        Schema = new OpenApiSchema
+                //        {
+                //            Type = "integer",
+                //            Default = new OpenApiInteger(10)
+                //        }
+                //    });
+
+                //    return options;
+                //});
 
             group.MapGet("/{id:int}", GetById);
 
@@ -25,12 +53,14 @@ namespace Minimal_API_Movies.Endpoints
             group.MapPost("/", Create)
                 .DisableAntiforgery()
                 .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
 
             group.MapPut("/{id:int}", Update)
                 .DisableAntiforgery()
                 .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
-                .RequireAuthorization("isadmin");
+                .RequireAuthorization("isadmin")
+                .WithOpenApi();
 
             group.MapDelete("/{id:int}", Delete)
                 .DisableAntiforgery()
