@@ -7,6 +7,7 @@ using Minimal_API_Movies.Endpoints;
 using Minimal_API_Movies.Entities;
 using Minimal_API_Movies.Repositories;
 using Minimal_API_Movies.Services;
+using Minimal_API_Movies.Swagger;
 using Minimal_API_Movies.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -96,20 +97,23 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header
     });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+
+    options.OperationFilter<AuthorizationFilter>();
+
+    //options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    //{
+    //    {
+    //        new OpenApiSecurityScheme
+    //        {
+    //            Reference = new OpenApiReference
+    //            {
+    //                Type = ReferenceType.SecurityScheme,
+    //                Id = "Bearer"
+    //            }
+    //        },
+    //        Array.Empty<string>()
+    //    }
+    //});
 });
 
 var app = builder.Build();
