@@ -64,8 +64,8 @@ namespace Minimal_API_Movies.Repositories
                     movie.Comments = comments.ToList();
                     foreach (var genre in genres)
                     {
-                        movie.GenresMovies.Add(new GenreMovie 
-                        { 
+                        movie.GenresMovies.Add(new GenreMovie
+                        {
                             GenreId = genre.Id,
                             Genre = genre
                         });
@@ -161,6 +161,41 @@ namespace Minimal_API_Movies.Repositories
                     "Movies_AssignActors",
                     new { MovieId = id, Actors = dt },
                     commandType: CommandType.StoredProcedure);
+            }
+        }
+
+        public async Task<List<Movie>> Filter(MoviesFilterDTO moviesFilterDTO)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var movies = connection.Query<Movie>(
+                    "Movies_Filter",
+                    new { 
+                        moviesFilterDTO.Page,
+                        moviesFilterDTO.RecordsPerPage,
+                        moviesFilterDTO.Title,
+                        moviesFilterDTO.GenreId,
+                        moviesFilterDTO.FutureReleases,
+                        moviesFilterDTO.InTheaters,
+                        moviesFilterDTO.OrderByField,
+                        moviesFilterDTO.OrderByAscending
+                    },
+                    commandType: CommandType.StoredProcedure);
+
+                var moviesCount = connection.QuerySingle<int>(
+                    "Movies_Count",
+                    new
+                    {
+                        moviesFilterDTO.Title,
+                        moviesFilterDTO.GenreId,
+                        moviesFilterDTO.FutureReleases,
+                        moviesFilterDTO.InTheaters
+                    },
+                    commandType: CommandType.StoredProcedure);
+                
+                httpContext.Response.Headers.Append("totalAmountOfRecords", moviesCount.ToString());
+                
+                return movies.ToList();
             }
         }
     }
