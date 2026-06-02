@@ -67,7 +67,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddOutputCache();
+//builder.Services.AddOutputCache();
+builder.Services.AddStackExchangeRedisOutputCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("redis");
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
